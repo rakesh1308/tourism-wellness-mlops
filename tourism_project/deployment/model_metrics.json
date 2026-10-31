@@ -1,0 +1,20 @@
+{
+  "best_params": {
+    "xgbclassifier__colsample_bytree": 0.6,
+    "xgbclassifier__learning_rate": 0.1,
+    "xgbclassifier__max_depth": 7,
+    "xgbclassifier__n_estimators": 200,
+    "xgbclassifier__reg_lambda": 1
+  },
+  "threshold": 0.38,
+  "train_accuracy": 1.0,
+  "train_precision": 1.0,
+  "train_recall": 1.0,
+  "train_f1": 1.0,
+  "train_roc_auc": 1.0,
+  "test_accuracy": 0.9402,
+  "test_precision": 0.8365,
+  "test_recall": 0.8581,
+  "test_f1": 0.8471,
+  "test_roc_auc": 0.9599
+}
