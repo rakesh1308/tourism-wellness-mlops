@@ -4,12 +4,18 @@ Loads the model that the GitHub Actions pipeline commits to tourism_project/depl
 collects customer details, puts them into a DataFrame and shows the prediction.
 """
 import os
+import json
 import joblib
 import pandas as pd
 import streamlit as st
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "best_tourism_model_v1.joblib")
-THRESHOLD = 0.45  # same threshold used during evaluation
+# Decision threshold tuned by the training pipeline (falls back to 0.5 if the metrics file is missing)
+try:
+    with open(os.path.join(os.path.dirname(__file__), "model_metrics.json")) as f:
+        THRESHOLD = float(json.load(f)["threshold"])
+except Exception:
+    THRESHOLD = 0.5
 
 @st.cache_resource
 def load_model():

@@ -14,7 +14,8 @@ import xgboost as xgb
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_predict
+import numpy as np
 from sklearn.metrics import (classification_report, accuracy_score, precision_score,
                              recall_score, f1_score, roc_auc_score)
 
@@ -25,7 +26,6 @@ mlflow.set_experiment("tourism-wellness-package")
 
 MODEL_DIR = os.path.join("tourism_project", "deployment")
 MODEL_PATH = os.path.join(MODEL_DIR, "best_tourism_model_v1.joblib")
-CLASSIFICATION_THRESHOLD = 0.45   # slightly below 0.5 to favour recall on likely buyers
 
 # 1. Load the splits from the workflow artifact
 Xtrain = pd.read_csv("Xtrain.csv")
@@ -70,7 +70,16 @@ with mlflow.start_run(run_name="xgb-gridsearch"):
             mlflow.log_metric("mean_cv_f1", res["mean_test_score"][i])
             mlflow.log_metric("std_cv_f1", res["std_test_score"][i])
 
-    # 7. Log the best parameters
+    # 7. Pick the decision threshold from out-of-fold predictions on the TRAINING set only:
+    #    every training row is scored by a model that did not see it, and I keep the cut-off with the best F1.
+    oof_proba = cross_val_predict(grid.best_estimator_, Xtrain, ytrain, cv=cv, method="predict_proba")[:, 1]
+    candidates = np.round(np.arange(0.10, 0.91, 0.01), 2)
+    oof_f1 = [f1_score(ytrain, (oof_proba >= t).astype(int)) for t in candidates]
+    CLASSIFICATION_THRESHOLD = float(candidates[int(np.argmax(oof_f1))])
+    print(f"Tuned threshold (max out-of-fold F1 on train): {CLASSIFICATION_THRESHOLD:.2f} | OOF F1 = {max(oof_f1):.4f}")
+    mlflow.log_metric("oof_f1_at_threshold", max(oof_f1))
+
+    # Log the best parameters
     mlflow.log_params(grid.best_params_)
     mlflow.log_param("scale_pos_weight", round(float(scale_pos_weight), 3))
     mlflow.log_param("classification_threshold", CLASSIFICATION_THRESHOLD)
