@@ -1,0 +1,9 @@
+# local artefacts that the pipeline regenerates
+mlruns/
+mlartifacts/
+Xtrain.csv
+Xtest.csv
+ytrain.csv
+ytest.csv
+__pycache__/
+.ipynb_checkpoints/
